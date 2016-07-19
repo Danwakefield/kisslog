@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -21,60 +22,64 @@ var (
 	}
 )
 
+func nextColor() string {
+	colorIndex = colorIndex + 1
+	return colors[colorIndex%len(colors)]
+}
+
 // Format returns either a JSON string or a pretty line for printing to terminal,
 // depending on whether logger believes it's printing to stderr or to another writer.
-func (l *Logger) Format(verbosity int, sort string, msg string, attrs *Attrs) string {
-	if !colorEnabled {
-		return l.JSONFormat(sort, msg, l.JSONFormatAttrs(attrs))
+func (l *Logger) Format(lvl logLevel, msg string, attrs *Attrs) string {
+	if !ColorEnabled {
+		return l.JSONFormat(lvl, msg, attrs)
 	}
 
-	return l.PrettyFormat(l.PrettyPrefix(verbosity), msg, attrs)
+	return l.PrettyFormat(l.PrettyPrefix(lvl), msg, attrs)
+}
+
+type marshalStruct struct {
+	Time       string `json:"time"`
+	Package    string `json:"package"`
+	Level      string `json:"level"`
+	Msg        string `json:"msg"`
+	Attributes *Attrs `json:"attributes,omitempty"`
 }
 
 // JSONFormat returns a JSON string representing the data provided and some internal state
 // from the logger.
-func (l *Logger) JSONFormat(sort string, msg string, attrs string) string {
-	// This is vulnerable to injection of invalid JSON characters.
-	// For JSON formatting, json.Marshal on an anonymous struct might work?
-	// Could then also dispense with JSONFormatAttrs, provided it iterates map values correctly.
-	// eg:
-	// jstruct := struct{
-	//  Time time.Time `json:"time"`
-	//  Package string `json:"package"`
-	//  Level string `json:"level"`
-	//  Msg map[string]interface{} `json:"msg"`
-	// } {time.Now(), l.Name, sort, attrs, msg}
-	// j, err := json.Marshal(jstruct)
-	// if err != nil { return err }
-	// return string(j)
-	return fmt.Sprintf("{ \"time\":\"%s\", \"package\":\"%s\", \"level\":\"%s\",%s \"msg\":\"%s\" }", time.Now(), l.Name, sort, attrs, msg)
-}
-
-// JSONFormatAttrs converts an Attrs object to JSON.
-func (l *Logger) JSONFormatAttrs(attrs *Attrs) string {
-	result := ""
-
-	if attrs == nil {
-		return ""
-	}
-
-	// Vulnerable to injection of invalid characters as it doesn't perform escaping.
-	// Should probably be replaced with a valid json.Marshal call?
-	for key, val := range *attrs {
-		if val, ok := val.(int); ok {
-			result = fmt.Sprintf("%s \"%s\": %d,", result, key, val)
-			continue
+func (l *Logger) JSONFormat(lvl logLevel, msg string, attrs *Attrs) string {
+	if FastJSON {
+		var result string
+		if attrs != nil {
+			for key, val := range *attrs {
+				if val, ok := val.(int); ok {
+					result = fmt.Sprintf(`%s "%s": %d,`, result, key, val)
+					continue
+				}
+				result = fmt.Sprintf(`%s "%s":"%v",`, result, key, val)
+			}
+			if len(*attrs) > 0 {
+				result = fmt.Sprintf(`"attributes": { %s }, `, result)
+			}
 		}
-
-		result = fmt.Sprintf("%s \"%s\":\"%v\",", result, key, val)
+		return fmt.Sprintf(`{ %s "time":"%s", "package":"%s", "level":"%s", "msg":"%s" }`,
+			result, time.Now().Format(TimeFormat), l.Name, lvl, msg)
 	}
 
-	return result
+	j, _ := json.Marshal(marshalStruct{
+		time.Now().Format(TimeFormat),
+		l.Name,
+		lvl.String(),
+		msg,
+		attrs,
+	})
+	return string(j)
 }
 
 // PrettyFormat constructs a timestamped, named, levelled log line for a given message/attrs.
 func (l *Logger) PrettyFormat(prefix, msg string, attrs *Attrs) string {
-	return fmt.Sprintf("%s %s%s%s:%s %s%s", time.Now().Format("15:04:05.000"), l.Color, l.Name, prefix, reset, msg, l.PrettyAttrs(attrs))
+	// return fmt.Sprintf("%s %s%s%s:%s %s%s", time.Now().Format("15:04:05.000"), l.Color, l.Name, prefix, reset, msg, l.PrettyAttrs(attrs))
+	return ""
 }
 
 // PrettyAttrs formats structured data provided as Attrs for printing to terminal.
@@ -102,16 +107,12 @@ func (l *Logger) PrettyAttrs(attrs *Attrs) string {
 }
 
 // PrettyPrefix provides a red "(!)" for Error logs only.
-func (l *Logger) PrettyPrefix(verbosity int) string {
+func (l *Logger) PrettyPrefix(lvl logLevel) string {
 	// was one of the below (X vs. verbosity) gates supposed to be referring to
 	// global verbosity, or local argument verbosity?
-	if verbosity != 3 {
+	if lvl != ErrorLevel {
 		return ""
 	}
-	return fmt.Sprintf("(%s%s)", red+"!", l.Color)
-}
-
-func nextColor() string {
-	colorIndex = colorIndex + 1
-	return colors[colorIndex%len(colors)]
+	return ""
+	// return fmt.Sprintf("(%s%s)", red+"!", l.Color)
 }
