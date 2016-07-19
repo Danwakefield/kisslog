@@ -1,4 +1,4 @@
-package logger
+package kisslog
 
 import (
 	"fmt"
@@ -13,8 +13,6 @@ const (
 	DisableLevel
 )
 
-var LogLevel = InfoLevel
-
 func (l logLevel) String() string {
 	switch l {
 	case DebugLevel:
@@ -28,7 +26,6 @@ func (l logLevel) String() string {
 }
 
 type Logger struct {
-	// Name by which the logger is identified when enabling or disabling it, and by envvar.
 	Name string
 }
 
@@ -39,7 +36,7 @@ func New(name string) *Logger {
 }
 
 func (l *Logger) IsEnabled() bool {
-	return true
+	return allEnabled || EnabledLoggers[l.Name]
 }
 
 func (l *Logger) Debug(format string, v ...interface{}) {
@@ -47,10 +44,8 @@ func (l *Logger) Debug(format string, v ...interface{}) {
 		return
 	}
 
-	v, attrs := SplitAttrs(v...)
-
-	l.Output(DebugLevel, fmt.Sprintf(format, v...), attrs)
-
+	v, attrs := splitAttrs(v...)
+	l.output(DebugLevel, fmt.Sprintf(format, v...), attrs)
 }
 
 func (l *Logger) Info(format string, v ...interface{}) {
@@ -58,28 +53,23 @@ func (l *Logger) Info(format string, v ...interface{}) {
 		return
 	}
 
-	v, attrs := SplitAttrs(v...)
-
-	l.Output(InfoLevel, fmt.Sprintf(format, v...), attrs)
+	v, attrs := splitAttrs(v...)
+	l.output(InfoLevel, fmt.Sprintf(format, v...), attrs)
 }
 
-// Error logs an error message using fmt. It has log-level 3, the highest level.
 func (l *Logger) Error(format string, v ...interface{}) {
-	if !l.IsEnabled() {
+	if LogLevel > ErrorLevel || !l.IsEnabled() {
 		return
 	}
 
-	v, attrs := SplitAttrs(v...)
-
-	l.Output(ErrorLevel, fmt.Sprintf(format, v...), attrs)
+	v, attrs := splitAttrs(v...)
+	l.output(ErrorLevel, fmt.Sprintf(format, v...), attrs)
 }
 
-// Output is the lower-level call delegated to by Info/Timer/Error, and can be used
-// to directly write to the underlying buffer regardless of log-level.
-func (l *Logger) Output(lvl logLevel, msg string, attrs *Attrs) {
-	l.Write(l.Format(lvl, msg, attrs))
+func (l *Logger) output(lvl logLevel, msg string, attrs *Attrs) {
+	l.write(l.format(lvl, msg, attrs))
 }
 
-func (l *Logger) Write(log string) {
+func (l *Logger) write(log string) {
 	fmt.Fprintln(out, log)
 }
