@@ -31,7 +31,7 @@ func (l *Logger) formatJSON(lvl logLevel, msg string, attrs *Attrs) string {
 		time.Now().Format(TimeFormat),
 		l.Name,
 		lvl.String(),
-		trace(5),
+		trace(),
 		msg,
 		attrs,
 	})
@@ -46,7 +46,7 @@ func (l *Logger) formatPretty(lvl logLevel, msg string, attrs *Attrs) string {
 		b.WriteRune(']')
 	}
 	b.WriteString(lvl.String())
-	b.WriteString(trace(5))
+	b.WriteString(trace())
 	b.WriteString(l.Name)
 	b.WriteString(": ")
 	b.WriteString(msg)
@@ -55,11 +55,13 @@ func (l *Logger) formatPretty(lvl logLevel, msg string, attrs *Attrs) string {
 	return b.String()
 }
 
-func trace(depth int) string {
+func trace() string {
 	if !TraceFile {
 		return ""
 	}
-	pc, f, line, _ := runtime.Caller(depth)
+	// We are 5 functions from where the original Info, Debug or Error was
+	// called.
+	pc, f, line, _ := runtime.Caller(5)
 	name := runtime.FuncForPC(pc).Name()
 	name = path.Base(name) // only use package.funcname
 	f = path.Base(f)       // only use filename

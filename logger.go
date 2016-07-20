@@ -26,8 +26,7 @@ func (l logLevel) String() string {
 }
 
 type Logger struct {
-	Name        string
-	LoggerLevel logLevel
+	Name string
 }
 
 func New(name string) *Logger {
@@ -37,33 +36,33 @@ func New(name string) *Logger {
 }
 
 func (l *Logger) Debug(format string, v ...interface{}) {
-	if LogLevel > DebugLevel ||
-		l.LoggerLevel > DebugLevel ||
-		(!allEnabled || enabledLoggers[l.Name]) {
+	enabledMutex.RLock()
+	if LogLevel > DebugLevel || (!allEnabled && !enabledLoggers[l.Name]) {
 		return
 	}
+	enabledMutex.RUnlock()
 
 	v, attrs := splitAttrs(v...)
 	l.output(DebugLevel, fmt.Sprintf(format, v...), attrs)
 }
 
 func (l *Logger) Info(format string, v ...interface{}) {
-	if LogLevel > InfoLevel ||
-		l.LoggerLevel > InfoLevel ||
-		(!allEnabled || enabledLoggers[l.Name]) {
+	enabledMutex.RLock()
+	if LogLevel > InfoLevel || (!allEnabled && !enabledLoggers[l.Name]) {
 		return
 	}
+	enabledMutex.RUnlock()
 
 	v, attrs := splitAttrs(v...)
 	l.output(InfoLevel, fmt.Sprintf(format, v...), attrs)
 }
 
 func (l *Logger) Error(format string, v ...interface{}) {
-	if LogLevel > ErrorLevel ||
-		l.LoggerLevel > ErrorLevel ||
-		(!allEnabled && enabledLoggers[l.Name]) {
+	enabledMutex.RLock()
+	if LogLevel > ErrorLevel || (!allEnabled && !enabledLoggers[l.Name]) {
 		return
 	}
+	enabledMutex.RUnlock()
 
 	v, attrs := splitAttrs(v...)
 	l.output(ErrorLevel, fmt.Sprintf(format, v...), attrs)

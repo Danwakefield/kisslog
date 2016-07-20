@@ -4,20 +4,22 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/azer/is-terminal"
 )
 
 var (
-	out        io.Writer
-	allEnabled = true
-
+	out            io.Writer
+	allEnabled     = true
 	enabledLoggers = map[string]bool{}
-	JSONOutput     = false
-	LogLevel       = InfoLevel
-	TimeFormat     = "15:04:05"
-	TraceFile      = true
+	enabledMutex   sync.RWMutex
+
+	JSONOutput = false
+	LogLevel   = InfoLevel
+	TimeFormat = "15:04:05"
+	TraceFile  = true
 )
 
 func init() {
@@ -62,20 +64,28 @@ func parseEnvVars() {
 	}
 
 	if list, exists := os.LookupEnv("LOG_ENABLED"); exists {
+		enabledMutex.Lock()
 		allEnabled = false
 		for _, name := range strings.Split(list, ",") {
 			enabledLoggers[name] = true
 		}
+		enabledMutex.Unlock()
 	}
 }
 
 func EnableLogger(name string) {
+	enabledMutex.Lock()
+
 	allEnabled = false
 	enabledLoggers[name] = true
+
+	enabledMutex.Unlock()
 }
 
 func DisableLogger(name string) {
+	enabledMutex.Lock()
 	delete(enabledLoggers, name)
+	enabledMutex.Unlock()
 }
 
 func SetOutput(w io.Writer) {

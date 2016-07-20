@@ -1,7 +1,6 @@
-## kisslog
+## kisslog - keep it simple silly
 
-Minimalistic logging library for Go.
-
+Minimalistic logging library for Go, heavily inspired by [azer/logger](https://github.com/azer/logger) and borrowing from [chzyer/logex](https://github.com/chzyer/logex)
 ## Install
 
 ```bash
@@ -42,8 +41,9 @@ log.Info("I have just completed a task", kisslog.Attrs{
 
 ### Options
 
-The default settings for kisslog are to log Info and Error for every logger.
-This can be changed in the code or by setting environmental variables.
+The default settings for kisslog are to log Info and Error for every logger to stderr,
+with output including the location of the log call.
+
 
 #### Logging Level
 By setting the `LOG_LEVEL` variable you can disable logging of certain methods.
@@ -59,7 +59,7 @@ The same can be achieved by setting `kisslog.LogLevel`
 #### Filtering
 Loggers can be filtered by setting the `LOG_ENABLED` variable.
 It can be managed programmatically using `kisslog.EnableLogger` and `kisslog.DisableLogger`.
-By default all loggers are enabled, using one of these disables all of those that are not explicitly enabled.
+Using any of these options disables logging from a logger unless it is explicitly enabled.
 
 |       ENV VAR       |           CODE                 |               INFO                                  |
 | :-----------------: | ------------------------------ | --------------------------------------------------- |
@@ -102,7 +102,6 @@ LOG_TRACE=FALSE go run example/simple.go
 # [16:23:37][ERROR]app: Failed to start, shutting down
 ```
 
-
 #### Time format
 You can change the precision of the timestamp using `LOG_TIMEFORMAT` or `kisslog.TimeFormat`.
 These both take values that [golang's time package](https://golang.org/pkg/time/#Constants) can parse.
@@ -119,7 +118,7 @@ LOG_TIMEFORMAT=2006-01-02T15:04:05Z07:00 go run example/simple.go
 ```
 #### Output Stream
 By default kisslog logs to `os.Stderr`.
-This can only be changed by calling `kisslog.SetOutput()` with an `io.Writer`
+This can be changed by calling `kisslog.SetOutput()` with an `io.Writer`
 
 ##### Output logs to a new file
 ```go
