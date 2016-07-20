@@ -1,118 +1,121 @@
-## logger
+## kisslog
 
 Minimalistic logging library for Go.
-
-![](https://i.cloudup.com/rUyno2tHCx.png)
 
 ## Install
 
 ```bash
-$ go get github.com/azer/logger
+$ go get github.com/danwakefield/logger
 ```
 
 ## Manual
 
-First create an instance with a preferred name;
-
+First create an instance with a preferred name.
+The returned Logger has three methods, all of which act like `printf` style functions.
 ```go
-import "github.com/azer/logger"
+package main
 
-var log = logger.New("example-app")
-```
+import "github.com/danwakefield/kisslog"
 
-It gives only three methods; `Info`, `Timer` and `Error`.
+var log = kisslog.New("app")
 
-```go
-log.Info("Running at %d", 8080)
-
-err := DoSomething()
-
-if err != nil {
-  log.Error("Failed: %s", err.Error())
+func main() {
+	log.Info("Requesting an image at %s", "foo/bar.jpg")
+	log.Debug("I bet you wont see this")
+	log.Error("Failed to start, shutting down")
 }
+
+//  [09:15:00][INFO ][main.main:simple.go:8] app: Requesting an image at foo/bar.jpg
+//  [09:15:00][ERROR][main.main:simple.go:14] app: Failed to start, shutting down
 ```
 
-Check out [example/simple.go](https://github.com/azer/logger/blob/master/example/simple.go) for a more detailed example.
-
-### Filtering
-
-By default, it won't output. Enable it with `LOG` environment variable:
-
-```bash
-$ LOG=* go run example-app.go
-```
-
-This will enable all logs. You can choose the packages that you'd like to display:
-
-```bash
-$ LOG=images,users go run example-app.go
-```
-
-In the above example, you'll only see logs from `images` and `users` packages.
-
-You can filter logs by their level, too. If `INFO` level is not useful for your case, pass `LOG_LEVEL`:
-
-```bash
-$ LOG=images,users LOG_LEVEL=error go run example-app.go
-```
-
-### Timers
-
-You can use timer logs for measuring your program. For example;
+Structured information can be added by passing a `kisslog.Attrs`
+instance as the last variable to the logging function
 
 ```go
-timer := log.Timer()
-
-image, err := PullImage("http://foo.com/bar.jpg")
-
-timer.End("Fetched foo.com/bar.jpg")
-```
-
-Timer log lines will be outputting the elapsed time in time.Duration in a normal terminal, or in int64 format when your program is running on a non-terminal environment.
-See below documentation for more info.
-
-### Structured Output
-
-When your app isn't running on a terminal, it'll change the output in JSON:
-
-```
-{ "time":"2014-10-04 11:44:22.418595705 -0700 PDT", "package":"database", "level":"INFO", "msg":"Connecting to mysql://azer@localhost:9900/foobar" }
-{ "time":"2014-10-04 11:44:22.418600851 -0700 PDT", "package":"images", "level":"INFO", "msg":"Requesting an image at foo/bar.jpg" }
-{ "time":"2014-10-04 11:44:22.668645527 -0700 PDT", "package":"images", "level":"TIMER", "elapsed":"250032416", "msg":"Fetched foo/bar.jpg" }
-{ "time":"2014-10-04 11:44:22.668665527 -0700 PDT", "package":"database", "level":"ERROR", "msg":"Fatal connection error." }
-{ "time":"2014-10-04 11:44:22.668673037 -0700 PDT", "package":"users", "level":"INFO", "msg":"John just logged  from Istanbul" }
-{ "time":"2014-10-04 11:44:22.668676732 -0700 PDT", "package":"websocket", "level":"INFO", "msg":"Connecting..." }
-{ "time":"2014-10-04 11:44:22.668681092 -0700 PDT", "package":"websocket", "level":"ERROR", "msg":"Unable to connect." }
-{ "time":"2014-10-04 11:44:22.919726985 -0700 PDT", "package":"app", "level":"ERROR", "msg":"Failed to start, shutting down..." }
-```
-
-So you can parse & process the output easily. Here is a command that lets you see the JSON output in your terminal;
-
-```
-LOG=* go run examples/simple.go 2>&1 | less
-```
-
-### Attributes
-
-To add custom attributes to the structured output;
-
-```go
-log.Info("Sending an e-mail...", logger.Attrs{
-  "from": "foo@bar.com",
-  "to": "qux@corge.com",
+log.Info("I have just completed a task", kisslog.Attrs{
+    "foo": 1,
+    "bar": "baz",
 })
+// [09:18:33][INFO ][main.main:simple.go:12] app: I have just completed a task [ foo=1 bar=baz ]
 ```
 
-The above log will appear in the structured output as:
+### Options
 
+The default settings for kisslog are to log Info and Error for every logger.
+This can be changed in the code or by setting environmental variables.
+
+#### Logging Level
+By setting the `LOG_LEVEL` variable you can disable logging of certain methods.
+The same can be achieved by setting `kisslog.LogLevel`
+* `LOG_LEVEL=DEBUG`   | `kisslog.LogLevel = kisslog.DebugLevel`   - Allows `Debug`, `Info` and `Error`
+* `LOG_LEVEL=INFO`    | `kisslog.LogLevel = kisslog.InfoLevel`    - Allows `Info` and `Error`
+* `LOG_LEVEL=ERROR`   | `kisslog.LogLevel = kisslog.ErrorLevel`   - Allows `Error`
+* `LOG_LEVEL=DISABLE` | `kisslog.LogLevel = kisslog.DisableLevel` - Allows no logging
+
+#### Filtering
+Loggers can be filtered by setting the `LOG_ENABLED` variable.
+It can be managed programmatically using `kisslog.EnableLogger` and `kisslog.DisableLogger`.
 ```go
-{ "time":"2014-10-04 11:44:22.919726985 -0700 PDT", "package":"mail", "level":"INFO", "msg":"Sending an e-mail", "from": "foo@foobar.com", "to": "qux@corge.com" }
+LOG_ENABLED=foo ./binary
+```
+Would only allow loggers defined like `log = kisslog.New("foo")` to work.
+Anything else would be disabled.
+
+#### JSON Output
+JSON Output can be forced on and off by setting the `LOG_JSON` variable.
+The `kisslog.JSONOutput` variable can be used for programmatic control.
+
+If the variable is not set JSON output is used by default if stderr is
+not a terminal.
+
+* `LOG_JSON=TRUE`  - Can also use `1`, `on` or `enable`
+* `LOG_JSON=FALSE` - Can also use `0`, `off` or `disable`
+
+Here is a command that lets you see the JSON output in your terminal;
+```
+go run example/simple.go 2>&1 | less
+# {"time":"10:59:35","package":"app","level":"[INFO ]","trace":"[main.main:simple.go:8] ","msg":"Requesting an image at foo/bar.jpg"}
+# {"time":"10:59:35","package":"app","level":"[INFO ]","trace":"[main.main:simple.go:12] ","msg":"I have just completed a task","attributes":{"bar":"baz","foo":1}}
+# {"time":"10:59:35","package":"app","level":"[ERROR]","trace":"[main.main:simple.go:14] ","msg":"Failed to start, shutting down"}
 ```
 
-In your command-line as:
+#### Time format
+You can change the precision of the timestamp using `LOG_TIMEFORMAT` or `kisslog.TimeFormat`.
+These both take values that [golang's time package](https://golang.org/pkg/time/#Constants) can parse.
 
-![](https://cldup.com/n4Uia8v1uo.png)
+E.g `LOG_TIMEFORMAT=2006-01-02T15:04:05Z07:00` | `kisslog.TimeFormat = time.RFC3339`
 
-### Setting The Output
+#### Output Stream
+By default kisslog logs to `os.Stderr`.
+This can only be changed by calling `kisslog.SetOutput()` with an `io.Writer`
 
-By default, it outputs to `stderr`. You can change it by calling `SetOutput` with an `*os.File` parameter.
+##### Output logs to a new file
+```go
+f, err := os.Create("foo.log")
+if err != nil {
+    panic(err)
+}
+defer f.Close() // Ensure that the file is closed.
+kisslog.SetOutput(f)
+```
+
+##### Append logs to existing file
+```go
+f, err := os.OpenFile("foo.log", os.O_APPEND|os.O_WRONLY, 0666)
+if err != nil {
+    panic(err)
+}
+defer f.Close()
+kisslog.SetOutput(f)
+```
+
+##### Append if file exists otherwise create it
+```go
+f, err := os.OpenFile("foo.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
+if err != nil {
+    panic(err)
+}
+defer f.Close()
+kisslog.SetOutput(f)
+```

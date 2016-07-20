@@ -4,13 +4,16 @@ import (
 	"io"
 	"os"
 	"strings"
+	"syscall"
+
+	"github.com/azer/is-terminal"
 )
 
 var (
 	out        io.Writer
 	allEnabled = true
 
-	EnabledLoggers = map[string]bool{}
+	enabledLoggers = map[string]bool{}
 	JSONOutput     = false
 	LogLevel       = InfoLevel
 	TimeFormat     = "15:04:05"
@@ -51,19 +54,28 @@ func parseEnvVars() {
 	case "disable", "off", "false", "0":
 		JSONOutput = false
 	default:
-		JSONOutput = false
+		JSONOutput = !isterminal.IsTerminal(syscall.Stderr)
 	}
 
-	if f, exists := os.LookupEnv("LOG_TIME_FORMAT"); exists {
+	if f, exists := os.LookupEnv("LOG_TIMEFORMAT"); exists {
 		TimeFormat = f
 	}
 
 	if list, exists := os.LookupEnv("LOG_ENABLED"); exists {
 		allEnabled = false
 		for _, name := range strings.Split(list, ",") {
-			EnabledLoggers[name] = true
+			enabledLoggers[name] = true
 		}
 	}
+}
+
+func EnableLogger(name string) {
+	allEnabled = false
+	enabledLoggers[name] = true
+}
+
+func DisableLogger(name string) {
+	delete(enabledLoggers, name)
 }
 
 func SetOutput(w io.Writer) {

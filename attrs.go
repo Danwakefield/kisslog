@@ -15,7 +15,7 @@ func (a *Attrs) Pretty() string {
 		result = fmt.Sprintf("%s %s=%v", result, key, val)
 	}
 
-	return result
+	return fmt.Sprintf(" [%s ]", result)
 }
 
 // SplitAttrs checks if the last item passed in v is an Attrs instance,

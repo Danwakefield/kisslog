@@ -26,7 +26,8 @@ func (l logLevel) String() string {
 }
 
 type Logger struct {
-	Name string
+	Name        string
+	LoggerLevel logLevel
 }
 
 func New(name string) *Logger {
@@ -35,12 +36,10 @@ func New(name string) *Logger {
 	}
 }
 
-func (l *Logger) IsEnabled() bool {
-	return allEnabled || EnabledLoggers[l.Name]
-}
-
 func (l *Logger) Debug(format string, v ...interface{}) {
-	if LogLevel > DebugLevel || !l.IsEnabled() {
+	if LogLevel > DebugLevel ||
+		l.LoggerLevel > DebugLevel ||
+		(!allEnabled || enabledLoggers[l.Name]) {
 		return
 	}
 
@@ -49,7 +48,9 @@ func (l *Logger) Debug(format string, v ...interface{}) {
 }
 
 func (l *Logger) Info(format string, v ...interface{}) {
-	if LogLevel > InfoLevel || !l.IsEnabled() {
+	if LogLevel > InfoLevel ||
+		l.LoggerLevel > InfoLevel ||
+		(!allEnabled || enabledLoggers[l.Name]) {
 		return
 	}
 
@@ -58,7 +59,9 @@ func (l *Logger) Info(format string, v ...interface{}) {
 }
 
 func (l *Logger) Error(format string, v ...interface{}) {
-	if LogLevel > ErrorLevel || !l.IsEnabled() {
+	if LogLevel > ErrorLevel ||
+		l.LoggerLevel > ErrorLevel ||
+		(!allEnabled && enabledLoggers[l.Name]) {
 		return
 	}
 
