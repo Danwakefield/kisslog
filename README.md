@@ -62,7 +62,7 @@ It can be managed programmatically using `kisslog.EnableLogger` and `kisslog.Dis
 By default all loggers are enabled, using one of these disables all of those that are not explicitly enabled.
 
 |       ENV VAR       |           CODE                 |               INFO                                  |
-| ------------------- | ------------------------------ | --------------------------------------------------- |
+| :-----------------: | ------------------------------ | --------------------------------------------------- |
 | `LOG_ENABLED=foo`   | `kisslog.EnableLogger("foo")`  |  All loggers not 'enabled' explicitly are disabled  |
 |        NA           | `kisslog.DisableLogger("foo")` |  Loggers cannot be disabled with ENVARS             |
 
