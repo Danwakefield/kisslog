@@ -25,8 +25,8 @@ func main() {
 	log.Error("Failed to start, shutting down")
 }
 
-//  [09:15:00][INFO ][main.main:simple.go:8] app: Requesting an image at foo/bar.jpg
-//  [09:15:00][ERROR][main.main:simple.go:14] app: Failed to start, shutting down
+//  [20:15:00][INFO ][main.main:simple.go:8] app: Requesting an image at foo/bar.jpg
+//  [20:15:00][ERROR][main.main:simple.go:14] app: Failed to start, shutting down
 ```
 
 Structured information can be added by passing a `kisslog.Attrs`
@@ -37,7 +37,7 @@ log.Info("I have just completed a task", kisslog.Attrs{
     "foo": 1,
     "bar": "baz",
 })
-// [09:18:33][INFO ][main.main:simple.go:12] app: I have just completed a task [ foo=1 bar=baz ]
+// [20:18:33][INFO ][main.main:simple.go:12] app: I have just completed a task [ foo=1 bar=baz ]
 ```
 
 ### Options
@@ -79,13 +79,11 @@ not a terminal.
 | `LOG_JSON=TRUE`     | `kisslog.JSONOutput = true`  |  Can also use `1`, `on` or `enable` to set ENVVAR   |
 | `LOG_JSON=FALSE`    | `kisslog.JSONOutput = false` |  Can also use `0`, `off` or `disable` to set ENVVAR |
 
-
-Here is a command that lets you see the JSON output in your terminal;
 ```
-go run example/simple.go 2>&1 | less
-# {"time":"10:59:35","package":"app","level":"[INFO ]","trace":"[main.main:simple.go:8] ","msg":"Requesting an image at foo/bar.jpg"}
-# {"time":"10:59:35","package":"app","level":"[INFO ]","trace":"[main.main:simple.go:12] ","msg":"I have just completed a task","attributes":{"bar":"baz","foo":1}}
-# {"time":"10:59:35","package":"app","level":"[ERROR]","trace":"[main.main:simple.go:14] ","msg":"Failed to start, shutting down"}
+LOG_JSON=TRUE go run example/simple.go
+# {"time":"20:59:35","package":"app","level":"[INFO ]","trace":"[main.main:simple.go:8] ","msg":"Requesting an image at foo/bar.jpg"}
+# {"time":"20:59:35","package":"app","level":"[INFO ]","trace":"[main.main:simple.go:12] ","msg":"I have just completed a task","attributes":{"bar":"baz","foo":1}}
+# {"time":"20:59:35","package":"app","level":"[ERROR]","trace":"[main.main:simple.go:14] ","msg":"Failed to start, shutting down"}
 ```
 
 #### Function Tracing
@@ -97,6 +95,13 @@ This can be disabled using `LOG_TRACE` or `kisslog.TraceFile`
 | `LOG_TRACE=TRUE`    | `kisslog.TraceFile = true`   |  Can also use `1`, `on` or `enable` to set ENVVAR   |
 | `LOG_TRACE=FALSE`   | `kisslog.TraceFile = false`  |  Can also use `0`, `off` or `disable` to set ENVVAR |
 
+```
+LOG_TRACE=FALSE go run example/simple.go
+# [16:23:37][INFO ]app: Requesting an image at foo/bar.jpg
+# [16:23:37][INFO ]app: I have just completed a task [ foo=1 bar=baz ]
+# [16:23:37][ERROR]app: Failed to start, shutting down
+```
+
 
 #### Time format
 You can change the precision of the timestamp using `LOG_TIMEFORMAT` or `kisslog.TimeFormat`.
@@ -106,6 +111,12 @@ These both take values that [golang's time package](https://golang.org/pkg/time/
 | ------------------------------------------ | ----------------------------------- |
 | `LOG_TIMEFORMAT=2006-01-02T15:04:05Z07:00` | `kisslog.TimeFormat = time.RFC3339` |
 
+```
+LOG_TIMEFORMAT=2006-01-02T15:04:05Z07:00 go run example/simple.go
+# [2000-12-20T20:19:26+01:00][INFO ][main.main:simple.go:8] app: Requesting an image at foo/bar.jpg
+# [2000-12-20T20:19:26+01:00][INFO ][main.main:simple.go:12] app: I have just completed a task [ foo=1 bar=baz ]
+# [2000-12-20T20:19:26+01:00][ERROR][main.main:simple.go:14] app: Failed to start, shutting down
+```
 #### Output Stream
 By default kisslog logs to `os.Stderr`.
 This can only be changed by calling `kisslog.SetOutput()` with an `io.Writer`
