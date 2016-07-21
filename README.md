@@ -20,12 +20,12 @@ var log = kisslog.New("app")
 
 func main() {
 	log.Info("Requesting an image at %s", "foo/bar.jpg")
-	log.Debug("I bet you wont see this")
-	log.Error("Failed to start, shutting down")
+	log.Debug("I bet you wont see %s", "this")
+	log.Error("Failed to start, shutting down %d..%d..%d", 3, 2, 1)
 }
 
 //  [20:15:00][INFO ][main.main:simple.go:8] app: Requesting an image at foo/bar.jpg
-//  [20:15:00][ERROR][main.main:simple.go:14] app: Failed to start, shutting down
+//  [20:15:00][ERROR][main.main:simple.go:14] app: Failed to start, shutting down 3..2..1
 ```
 
 Structured information can be added by passing a `kisslog.Attrs`
@@ -83,7 +83,7 @@ not a terminal.
 LOG_JSON=TRUE go run example/simple.go
 # {"time":"20:59:35","package":"app","level":"[INFO ]","trace":"[main.main:simple.go:8] ","msg":"Requesting an image at foo/bar.jpg"}
 # {"time":"20:59:35","package":"app","level":"[INFO ]","trace":"[main.main:simple.go:12] ","msg":"I have just completed a task","attributes":{"bar":"baz","foo":1}}
-# {"time":"20:59:35","package":"app","level":"[ERROR]","trace":"[main.main:simple.go:14] ","msg":"Failed to start, shutting down"}
+# {"time":"20:59:35","package":"app","level":"[ERROR]","trace":"[main.main:simple.go:14] ","msg":"Failed to start, shutting down 3..2..1"}
 ```
 
 #### Function Tracing
@@ -99,7 +99,7 @@ This can be disabled using `LOG_TRACE` or `kisslog.TraceFile`
 LOG_TRACE=FALSE go run example/simple.go
 # [16:23:37][INFO ]app: Requesting an image at foo/bar.jpg
 # [16:23:37][INFO ]app: I have just completed a task [ foo=1 bar=baz ]
-# [16:23:37][ERROR]app: Failed to start, shutting down
+# [16:23:37][ERROR]app: Failed to start, shutting down 3..2..1
 ```
 
 #### Time format
@@ -114,7 +114,7 @@ These both take values that [golang's time package](https://golang.org/pkg/time/
 LOG_TIMEFORMAT=2006-01-02T15:04:05Z07:00 go run example/simple.go
 # [2000-12-20T20:19:26+01:00][INFO ][main.main:simple.go:8] app: Requesting an image at foo/bar.jpg
 # [2000-12-20T20:19:26+01:00][INFO ][main.main:simple.go:12] app: I have just completed a task [ foo=1 bar=baz ]
-# [2000-12-20T20:19:26+01:00][ERROR][main.main:simple.go:14] app: Failed to start, shutting down
+# [2000-12-20T20:19:26+01:00][ERROR][main.main:simple.go:14] app: Failed to start, shutting down 3..2..1
 ```
 #### Output Stream
 By default kisslog logs to `os.Stderr`.
