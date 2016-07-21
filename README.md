@@ -4,7 +4,7 @@ Minimalistic logging library for Go, heavily inspired by [azer/logger](https://g
 ## Install
 
 ```bash
-$ go get github.com/danwakefield/logger
+$ go get github.com/danwakefield/kisslog
 ```
 
 ## Manual
