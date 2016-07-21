@@ -29,7 +29,7 @@ func main() {
 ```
 
 Structured information can be added by passing a `kisslog.Attrs`
-instance as the last variable to the logging function
+instance as the _last variable_ to the logging function
 
 ```go
 log.Info("I have just completed a task", kisslog.Attrs{
