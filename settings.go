@@ -3,6 +3,7 @@ package kisslog
 import (
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -41,22 +42,14 @@ func parseEnvVars() {
 		LogLevel = InfoLevel
 	}
 
-	switch strings.ToLower(os.Getenv("LOG_TRACE")) {
-	case "enable", "on", "true", "1":
-		TraceFile = true
-	case "disable", "off", "false", "0":
-		TraceFile = false
-	default:
-		TraceFile = true
-	}
+	v, _ := strconv.ParseBool(os.Getenv("LOG_TRACE"))
+	TraceFile = v
 
-	switch strings.ToLower(os.Getenv("LOG_JSON")) {
-	case "enable", "on", "true", "1":
-		JSONOutput = true
-	case "disable", "off", "false", "0":
-		JSONOutput = false
-	default:
+	v, err := strconv.ParseBool(os.Getenv("LOG_JSON"))
+	if err != nil {
 		JSONOutput = !isterminal.IsTerminal(syscall.Stderr)
+	} else {
+		JSONOutput = v
 	}
 
 	if f, exists := os.LookupEnv("LOG_TIMEFORMAT"); exists {
